@@ -23,6 +23,11 @@ export const loginUser = async (email, password) => {
   return response.data
 }
 
+export const registerUser = async (payload) => {
+  const response = await api.post('/auth/register', payload)
+  return response.data
+}
+
 // ─── Reads ───────────────────────────────────────────────────────────────────
 export const getDashboard = async () => unwrap(await api.get('/dashboard'))
 export const getReports   = async () => unwrap(await api.get('/reports'))
@@ -34,6 +39,8 @@ export const getFuelLogs  = async () => unwrap(await api.get('/fuel'))
 export const getExpenses  = async () => unwrap(await api.get('/expenses'))
 
 // ─── Writes ──────────────────────────────────────────────────────────────────
+export const createVehicle = async (payload) => unwrap(await api.post('/vehicles', payload))
+export const createDriver  = async (payload) => unwrap(await api.post('/drivers', payload))
 export const createTrip = async (payload) => unwrap(await api.post('/trips', payload))
 export const createMaintenance = async (payload) => unwrap(await api.post('/maintenance', payload))
 export const createFuelLog = async (payload) => unwrap(await api.post('/fuel', payload))

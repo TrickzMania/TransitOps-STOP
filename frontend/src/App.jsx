@@ -7,6 +7,7 @@ import Drivers from './pages/Drivers'
 import FuelExpenses from './pages/FuelExpenses'
 import Login from './pages/Login'
 import Maintenance from './pages/Maintenance'
+import Register from './pages/Register'
 import Reports from './pages/Reports'
 import Settings from './pages/Settings'
 import Trips from './pages/Trips'
@@ -14,13 +15,13 @@ import Vehicles from './pages/Vehicles'
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard' },
-  { to: '/vehicles', label: 'Vehicles' },
-  { to: '/drivers', label: 'Drivers' },
-  { to: '/trips', label: 'Trips' },
+  { to: '/vehicles',  label: 'Vehicles' },
+  { to: '/drivers',   label: 'Drivers' },
+  { to: '/trips',     label: 'Trips' },
   { to: '/maintenance', label: 'Maintenance' },
   { to: '/fuel-expenses', label: 'Fuel & Expenses' },
-  { to: '/reports', label: 'Reports' },
-  { to: '/settings', label: 'Settings' },
+  { to: '/reports',   label: 'Reports' },
+  { to: '/settings',  label: 'Settings' },
 ]
 
 function AppShell() {
@@ -29,43 +30,26 @@ function AppShell() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const handleLogout = () => {
-    logout()
-    navigate('/')
-  }
-
   return (
     <>
       <aside className={`sidebar ${sidebarOpen ? 'open' : 'collapsed'}`}>
         <div className="sidebar-brand">
           <div className="brand-mark" aria-hidden="true">
             <svg viewBox="0 0 24 24" className="brand-icon">
-              <path d="M4 14h8l2-3h4l2 3v2H4z" />
-              <path d="M8 11V8h3" />
-              <path d="M14 11h3" />
-              <circle cx="8" cy="16" r="2" />
-              <circle cx="16" cy="16" r="2" />
+              <path d="M4 14h8l2-3h4l2 3v2H4z" /><path d="M8 11V8h3" /><path d="M14 11h3" />
+              <circle cx="8" cy="16" r="2" /><circle cx="16" cy="16" r="2" />
             </svg>
           </div>
-          <div className="brand-copy">
-            <h3>TransitOps</h3>
-            <p>Command center</p>
-          </div>
+          <div className="brand-copy"><h3>TransitOps</h3><p>Command center</p></div>
         </div>
         <button className="sidebar-toggle" onClick={() => setSidebarOpen((v) => !v)}>
           {sidebarOpen ? '⟨' : '⟩'}
         </button>
         <nav className="nav-links">
           {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              title={item.label}
-              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-            >
-              <span className="nav-link-badge" aria-hidden="true">
-                {item.label.charAt(0).toUpperCase()}
-              </span>
+            <NavLink key={item.to} to={item.to} title={item.label}
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+              <span className="nav-link-badge" aria-hidden="true">{item.label.charAt(0)}</span>
               {sidebarOpen && <span className="nav-link-text">{item.label}</span>}
             </NavLink>
           ))}
@@ -73,7 +57,8 @@ function AppShell() {
         {sidebarOpen && user && (
           <div className="sidebar-footer">
             <span className="muted">{user.full_name || user.email}</span>
-            <button className="btn btn-secondary sidebar-logout" onClick={handleLogout}>
+            <span className="muted" style={{ fontSize: '0.75rem', opacity: 0.7 }}>{user.role}</span>
+            <button className="btn btn-secondary sidebar-logout" onClick={() => { logout(); navigate('/') }}>
               Logout
             </button>
           </div>
@@ -93,17 +78,16 @@ function AppShell() {
             </div>
           </header>
         )}
-
         <Routes>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/vehicles" element={<Vehicles />} />
-          <Route path="/drivers" element={<Drivers />} />
-          <Route path="/trips" element={<Trips />} />
-          <Route path="/maintenance" element={<Maintenance />} />
+          <Route path="/dashboard"    element={<Dashboard />} />
+          <Route path="/vehicles"     element={<Vehicles />} />
+          <Route path="/drivers"      element={<Drivers />} />
+          <Route path="/trips"        element={<Trips />} />
+          <Route path="/maintenance"  element={<Maintenance />} />
           <Route path="/fuel-expenses" element={<FuelExpenses />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/reports"      element={<Reports />} />
+          <Route path="/settings"     element={<Settings />} />
+          <Route path="*"             element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </main>
     </>
@@ -113,17 +97,11 @@ function AppShell() {
 function App() {
   const { isLoggedIn } = useAuth()
   const location = useLocation()
-  const isLoginRoute = location.pathname === '/'
+  const publicRoutes = ['/', '/register']
+  const isPublic = publicRoutes.includes(location.pathname)
 
-  // If not logged in and not on login, redirect to login
-  if (!isLoggedIn && !isLoginRoute) {
-    return <Navigate to="/" replace />
-  }
-
-  // If logged in and on login page, redirect to dashboard
-  if (isLoggedIn && isLoginRoute) {
-    return <Navigate to="/dashboard" replace />
-  }
+  if (!isLoggedIn && !isPublic) return <Navigate to="/" replace />
+  if (isLoggedIn && isPublic) return <Navigate to="/dashboard" replace />
 
   return (
     <div className="app-shell">
@@ -131,8 +109,9 @@ function App() {
         <AppShell />
       ) : (
         <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="/"         element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="*"         element={<Navigate to="/" replace />} />
         </Routes>
       )}
     </div>

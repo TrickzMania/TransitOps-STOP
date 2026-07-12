@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { loginUser } from '../services/api'
 
@@ -18,10 +18,7 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-    if (!form.email || !form.password) {
-      setError('Please enter your email and password.')
-      return
-    }
+    if (!form.email || !form.password) return setError('Please enter your email and password.')
     setLoading(true)
     try {
       const data = await loginUser(form.email, form.password)
@@ -33,7 +30,6 @@ function Login() {
       }
     } catch (err) {
       const msg = err.response?.data?.message
-      // If backend is unreachable in dev, allow demo access
       if (!msg && err.code === 'ERR_NETWORK') {
         login({ full_name: 'Demo User', email: form.email, role: form.role }, null)
         navigate('/dashboard')
@@ -51,19 +47,15 @@ function Login() {
         <div className="auth-info">
           <div className="logo-badge" aria-hidden="true">
             <svg viewBox="0 0 24 24" className="brand-icon">
-              <path d="M4 14h8l2-3h4l2 3v2H4z" />
-              <path d="M8 11V8h3" />
-              <path d="M14 11h3" />
-              <circle cx="8" cy="16" r="2" />
-              <circle cx="16" cy="16" r="2" />
+              <path d="M4 14h8l2-3h4l2 3v2H4z" /><path d="M8 11V8h3" /><path d="M14 11h3" />
+              <circle cx="8" cy="16" r="2" /><circle cx="16" cy="16" r="2" />
             </svg>
           </div>
           <h2>TransitOps</h2>
-          <p className="muted description-text">
-            A centralized platform for fleet operations, dispatching, maintenance, fuel control, and analytics.
-          </p>
-          <p className="muted description-text">
-            It helps teams reduce scheduling conflicts, improve visibility, and manage transport operations more efficiently.
+          <p className="muted description-text">A centralized platform for fleet operations, dispatching, maintenance, fuel control, and analytics.</p>
+          <p className="muted description-text">It helps teams reduce scheduling conflicts, improve visibility, and manage transport operations more efficiently.</p>
+          <p className="muted description-text" style={{ marginTop: 16 }}>
+            New to TransitOps? <Link to="/register" style={{ color: '#ff4d4d', fontWeight: 600 }}>Create an account →</Link>
           </p>
         </div>
 
@@ -71,11 +63,8 @@ function Login() {
           <div className="auth-brand">
             <div className="brand-mark" aria-hidden="true">
               <svg viewBox="0 0 24 24" className="brand-icon">
-                <path d="M4 14h8l2-3h4l2 3v2H4z" />
-                <path d="M8 11V8h3" />
-                <path d="M14 11h3" />
-                <circle cx="8" cy="16" r="2" />
-                <circle cx="16" cy="16" r="2" />
+                <path d="M4 14h8l2-3h4l2 3v2H4z" /><path d="M8 11V8h3" /><path d="M14 11h3" />
+                <circle cx="8" cy="16" r="2" /><circle cx="16" cy="16" r="2" />
               </svg>
             </div>
             <div>
@@ -84,37 +73,15 @@ function Login() {
             </div>
           </div>
           <h3>Sign in to manage operations</h3>
-          {error && (
-            <div className="auth-error" role="alert">
-              {error}
-            </div>
-          )}
+          {error && <div className="auth-error" role="alert">{error}</div>}
           <form className="auth-form" onSubmit={handleSubmit} noValidate>
             <label>
               Email
-              <input
-                id="login-email"
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="ops@transitops.com"
-                autoComplete="email"
-                required
-              />
+              <input id="login-email" type="email" name="email" value={form.email} onChange={handleChange} placeholder="ops@transitops.com" autoComplete="email" required />
             </label>
             <label>
               Password
-              <input
-                id="login-password"
-                type="password"
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-                autoComplete="current-password"
-                required
-              />
+              <input id="login-password" type="password" name="password" value={form.password} onChange={handleChange} placeholder="••••••••" autoComplete="current-password" required />
             </label>
             <label>
               Role
@@ -126,19 +93,15 @@ function Login() {
               </select>
             </label>
             <div className="login-actions">
-              <label>
-                <input type="checkbox" name="remember" checked={form.remember} onChange={handleChange} /> Remember me
-              </label>
+              <label><input type="checkbox" name="remember" checked={form.remember} onChange={handleChange} /> Remember me</label>
               <a href="#">Forgot password?</a>
             </div>
-            <button
-              id="login-submit"
-              className="btn btn-primary w-100 mt-3"
-              type="submit"
-              disabled={loading}
-            >
+            <button id="login-submit" className="btn btn-primary w-100 mt-3" type="submit" disabled={loading}>
               {loading ? 'Signing in…' : 'Login'}
             </button>
+            <p className="muted" style={{ textAlign: 'center', marginTop: 12 }}>
+              Don't have an account? <Link to="/register" style={{ color: '#ff4d4d' }}>Create one</Link>
+            </p>
           </form>
         </div>
       </div>
