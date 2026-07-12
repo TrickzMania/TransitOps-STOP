@@ -2,12 +2,12 @@
   "name": "transitops-stop",
   "private": true,
   "version": "1.0.0",
-  "description": "TransitOps integrated frontend and backend",
+  "description": "TransitOps — Fleet Command Center",
   "scripts": {
-    "dev": "npm --prefix backend run dev",
+    "build": "npm install --prefix frontend && npm run build --prefix frontend",
+    "start": "npm --prefix backend start",
+    "render-build": "npm install --prefix frontend && npm run build --prefix frontend && npm install --prefix backend",
     "dev:backend": "npm --prefix backend run dev",
-    "dev:frontend": "npm --prefix frontend run dev",
-    "build": "npm --prefix frontend run build",
-    "start": "npm --prefix backend start"
+    "dev:frontend": "npm --prefix frontend run dev"
   }
 }
