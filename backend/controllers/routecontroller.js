@@ -1,12 +1,11 @@
 const pool = require("../config/db");
 
-const getAllDrivers = async (req, res) => {
+const getAllRoutes = async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM drivers ORDER BY driver_id");
+    const result = await pool.query("SELECT * FROM routes ORDER BY route_id");
 
     res.json({
       success: true,
-      count: result.rows.length,
       data: result.rows,
     });
   } catch (err) {
@@ -17,6 +16,4 @@ const getAllDrivers = async (req, res) => {
   }
 };
 
-module.exports = {
-  getAllDrivers,
-};
+module.exports = { getAllRoutes };
