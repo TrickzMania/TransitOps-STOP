@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { dashboardMetrics, recentTrips } from '../data/mockData'
+import { getDashboard, getTrips, mapTrip } from '../services/api'
 
 const fleetCards = [
   { title: 'Active vehicles', value: '18', detail: 'In service now', status: 'Live', accent: 'teal' },
@@ -27,11 +28,46 @@ const pieData = [
 
 function Dashboard() {
   const [clock, setClock] = useState(new Date())
+  const [dashboardData, setDashboardData] = useState(null)
+  const [recentTripList, setRecentTripList] = useState(recentTrips)
 
   useEffect(() => {
     const timer = window.setInterval(() => setClock(new Date()), 1000)
     return () => window.clearInterval(timer)
   }, [])
+
+  useEffect(() => {
+    let ignore = false
+
+    Promise.allSettled([getDashboard(), getTrips()]).then(([dashboardResult, tripsResult]) => {
+      if (ignore) return
+
+      if (dashboardResult.status === 'fulfilled') {
+        setDashboardData(dashboardResult.value)
+      }
+      if (tripsResult.status === 'fulfilled' && Array.isArray(tripsResult.value) && tripsResult.value.length) {
+        setRecentTripList(tripsResult.value.map(mapTrip).slice(0, 5).map((trip) => ({
+          id: trip.id,
+          route: `${trip.source} to ${trip.destination}`,
+          driver: trip.driver,
+          status: trip.status,
+          eta: '-',
+        })))
+      }
+    })
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  const liveFleetCards = dashboardData ? [
+    { title: 'Total vehicles', value: dashboardData.totalVehicles, detail: 'Fleet records', status: 'Live', accent: 'teal' },
+    { title: 'Total drivers', value: dashboardData.totalDrivers, detail: 'Driver records', status: 'Live', accent: 'green' },
+    { title: 'Active trips', value: dashboardData.activeTrips, detail: 'Trips moving now', status: 'Active', accent: 'amber' },
+    { title: 'Maintenance records', value: dashboardData.maintenanceRecords, detail: 'Service history', status: 'Tracked', accent: 'amber' },
+    ...fleetCards.slice(4),
+  ] : fleetCards
 
   return (
     <div className="page-grid">
@@ -41,7 +77,7 @@ function Dashboard() {
           <h2>Everything moving smoothly this morning.</h2>
           <p className="muted">Monitor route performance, fleet status, maintenance alerts, and utilization in one command view.</p>
         </div>
-        <div className="hero-badge">Live • {clock.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+        <div className="hero-badge">Live â€¢ {clock.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
       </section>
 
       <section className="panel">
@@ -68,7 +104,7 @@ function Dashboard() {
       </section>
 
       <div className="dashboard-cards">
-        {fleetCards.map((card) => (
+        {liveFleetCards.map((card) => (
           <div key={card.title} className={`dashboard-card accent-${card.accent}`}>
             <div className="card-top">
               <p className="muted">{card.title}</p>
@@ -172,7 +208,7 @@ function Dashboard() {
           <a href="#">View all</a>
         </div>
         <div className="table-card">
-          {recentTrips.map((trip) => (
+          {recentTripList.map((trip) => (
             <div key={trip.id} className="table-row">
               <div>
                 <strong>{trip.id}</strong>
@@ -215,3 +251,5 @@ function Dashboard() {
 }
 
 export default Dashboard
+
+

@@ -1,42 +1,100 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { drivers as initialDrivers, trips as initialTrips, vehicles as initialVehicles } from '../data/mockData'
+import { createTrip, getDrivers, getTrips, getVehicles, mapDriver, mapTrip, mapVehicle } from '../services/api'
 
 function Trips() {
   const [tripList, setTripList] = useState(initialTrips)
-  const [form, setForm] = useState({ source: '', destination: '', vehicle: '', driver: '', cargoWeight: '', plannedDistance: '' })
+  const [driverList, setDriverList] = useState(initialDrivers)
+  const [vehicleList, setVehicleList] = useState(initialVehicles)
+  const [form, setForm] = useState({
+    source: '',
+    destination: '',
+    vehicle: '',
+    driver: '',
+    cargoWeight: '',
+    plannedDistance: '',
+  })
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
-  const availableVehicles = initialVehicles.filter((vehicle) => vehicle.status === 'Available')
-  const availableDrivers = initialDrivers.filter((driver) => driver.status === 'Available')
+  const availableVehicles = vehicleList.filter((v) => v.status === 'Available')
+  const availableDrivers = driverList.filter((d) => d.status === 'Available')
+
+  useEffect(() => {
+    let ignore = false
+
+    Promise.allSettled([getTrips(), getVehicles(), getDrivers()]).then(
+      ([tripsResult, vehiclesResult, driversResult]) => {
+        if (ignore) return
+
+        if (tripsResult.status === 'fulfilled' && Array.isArray(tripsResult.value) && tripsResult.value.length) {
+          setTripList(tripsResult.value.map(mapTrip))
+        }
+        if (vehiclesResult.status === 'fulfilled' && Array.isArray(vehiclesResult.value) && vehiclesResult.value.length) {
+          setVehicleList(vehiclesResult.value.map(mapVehicle))
+        }
+        if (driversResult.status === 'fulfilled' && Array.isArray(driversResult.value) && driversResult.value.length) {
+          setDriverList(driversResult.value.map(mapDriver))
+        }
+      }
+    )
+
+    return () => {
+      ignore = true
+    }
+  }, [])
 
   const handleChange = (event) => {
     const { name, value } = event.target
     setForm((current) => ({ ...current, [name]: value }))
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    if (!form.source || !form.destination || !form.vehicle || !form.driver || !form.cargoWeight || !form.plannedDistance) {
-      return
+    setSaveError('')
+    if (!form.source || !form.destination) return
+
+    const selectedVehicle = availableVehicles.find((v) => String(v.id) === form.vehicle)
+    const selectedDriver = availableDrivers.find((d) => String(d.id) === form.driver)
+
+    // Optimistic UI update
+    const optimisticTrip = {
+      id: `TR-new-${Date.now()}`,
+      source: form.source,
+      destination: form.destination,
+      vehicle: selectedVehicle?.nameModel || form.vehicle || '-',
+      driver: selectedDriver?.name || form.driver || '-',
+      cargoWeightKg: form.cargoWeight,
+      plannedDistanceKm: form.plannedDistance,
+      status: 'Planned',
     }
+    setTripList((current) => [optimisticTrip, ...current])
+    setForm({ source: '', destination: '', vehicle: '', driver: '', cargoWeight: '', plannedDistance: '' })
 
-    const selectedVehicle = availableVehicles.find((vehicle) => vehicle.id === form.vehicle)
-    const selectedDriver = availableDrivers.find((driver) => driver.id === form.driver)
-
-    setTripList((current) => [
-      {
-        id: `TR-${String(current.length + 1042).padStart(4, '0')}`,
+    setSaving(true)
+    try {
+      const saved = await createTrip({
+        vehicle_id: form.vehicle || null,
+        driver_id: form.driver || null,
         source: form.source,
         destination: form.destination,
-        vehicle: selectedVehicle?.nameModel || form.vehicle,
-        driver: selectedDriver?.name || form.driver,
-        cargoWeightKg: form.cargoWeight,
-        plannedDistanceKm: form.plannedDistance,
-        status: 'Planned',
-      },
-      ...current,
-    ])
-
-    setForm({ source: '', destination: '', vehicle: '', driver: '', cargoWeight: '', plannedDistance: '' })
+        cargo_weight_kg: form.cargoWeight || null,
+        planned_distance_km: form.plannedDistance || null,
+        trip_status: 'Planned',
+      })
+      // Replace optimistic entry with real DB entry
+      if (saved) {
+        setTripList((current) =>
+          current.map((t) =>
+            t.id === optimisticTrip.id ? mapTrip(saved) : t
+          )
+        )
+      }
+    } catch {
+      setSaveError('Trip saved locally but failed to sync with server.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -63,10 +121,10 @@ function Trips() {
                       <div className="timeline-marker" />
                       <div className="timeline-body">
                         <div className="card-top">
-                          <strong>{trip.source} → {trip.destination}</strong>
+                          <strong>{trip.source} to {trip.destination}</strong>
                           <span className="status-chip">{trip.status}</span>
                         </div>
-                        <p className="muted">Vehicle: {trip.vehicle} • Driver: {trip.driver}</p>
+                        <p className="muted">Vehicle: {trip.vehicle} | Driver: {trip.driver}</p>
                         <div className="timeline-steps">
                           {steps.map((step, index) => (
                             <span key={step} className={`timeline-step ${index <= activeIndex ? 'active' : ''}`}>
@@ -86,6 +144,7 @@ function Trips() {
                 <h3>Create trip</h3>
                 <span className="muted">Add a new route</span>
               </div>
+              {saveError && <p className="muted" style={{ color: 'var(--color-danger, #f87171)' }}>{saveError}</p>}
               <form className="trip-form" onSubmit={handleSubmit}>
                 <div className="form-row">
                   <label>
@@ -127,7 +186,9 @@ function Trips() {
                     <input name="plannedDistance" value={form.plannedDistance} onChange={handleChange} placeholder="124" />
                   </label>
                 </div>
-                <button className="btn btn-primary" type="submit">Create trip</button>
+                <button className="btn btn-primary" type="submit" disabled={saving}>
+                  {saving ? 'Saving…' : 'Create trip'}
+                </button>
               </form>
             </div>
           </div>

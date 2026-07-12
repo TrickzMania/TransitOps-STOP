@@ -1,6 +1,50 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { loginUser } from '../services/api'
 
 function Login() {
+  const { login } = useAuth()
+  const navigate = useNavigate()
+  const [form, setForm] = useState({ email: '', password: '', role: 'fleet-manager', remember: false })
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target
+    setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    if (!form.email || !form.password) {
+      setError('Please enter your email and password.')
+      return
+    }
+    setLoading(true)
+    try {
+      const data = await loginUser(form.email, form.password)
+      if (data.success) {
+        login(data.user, data.token || null)
+        navigate('/dashboard')
+      } else {
+        setError(data.message || 'Login failed. Check your credentials.')
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message
+      // If backend is unreachable in dev, allow demo access
+      if (!msg && err.code === 'ERR_NETWORK') {
+        login({ full_name: 'Demo User', email: form.email, role: form.role }, null)
+        navigate('/dashboard')
+      } else {
+        setError(msg || 'Login failed. Check your credentials.')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="auth-shell">
       <div className="auth-card">
@@ -40,18 +84,41 @@ function Login() {
             </div>
           </div>
           <h3>Sign in to manage operations</h3>
-          <form className="auth-form">
+          {error && (
+            <div className="auth-error" role="alert">
+              {error}
+            </div>
+          )}
+          <form className="auth-form" onSubmit={handleSubmit} noValidate>
             <label>
               Email
-              <input type="email" placeholder="ops@transitops.com" />
+              <input
+                id="login-email"
+                type="email"
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                placeholder="ops@transitops.com"
+                autoComplete="email"
+                required
+              />
             </label>
             <label>
               Password
-              <input type="password" placeholder="••••••••" />
+              <input
+                id="login-password"
+                type="password"
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                placeholder="••••••••"
+                autoComplete="current-password"
+                required
+              />
             </label>
             <label>
               Role
-              <select defaultValue="fleet-manager">
+              <select name="role" value={form.role} onChange={handleChange}>
                 <option value="fleet-manager">Fleet Manager</option>
                 <option value="dispatcher">Dispatcher</option>
                 <option value="safety-officer">Safety Officer</option>
@@ -60,13 +127,18 @@ function Login() {
             </label>
             <div className="login-actions">
               <label>
-                <input type="checkbox" /> Remember me
+                <input type="checkbox" name="remember" checked={form.remember} onChange={handleChange} /> Remember me
               </label>
               <a href="#">Forgot password?</a>
             </div>
-            <Link to="/dashboard" className="btn btn-primary w-100 mt-3">
-              Login
-            </Link>
+            <button
+              id="login-submit"
+              className="btn btn-primary w-100 mt-3"
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? 'Signing in…' : 'Login'}
+            </button>
           </form>
         </div>
       </div>

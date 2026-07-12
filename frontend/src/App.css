@@ -923,3 +923,35 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Auth error banner ─────────────────────────────────────────────────── */
+.auth-error {
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  color: #f87171;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  margin-bottom: 12px;
+}
+
+/* ── Sidebar footer (user + logout) ───────────────────────────────────── */
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid #f1d8d8;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar-logout {
+  width: 100%;
+  font-size: 0.8rem;
+  padding: 6px 10px;
+}
+
+/* ── Utility helpers used in Login ────────────────────────────────────── */
+.w-100 { width: 100%; }
+.mt-3  { margin-top: 12px; }
+

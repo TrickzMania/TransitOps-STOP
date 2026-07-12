@@ -1,9 +1,26 @@
-import { useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { vehicles as initialVehicles } from '../data/mockData'
+import { getVehicles, mapVehicle } from '../services/api'
 
 function Vehicles() {
   const [vehicleList, setVehicleList] = useState(initialVehicles)
   const [search, setSearch] = useState('')
+
+  useEffect(() => {
+    let ignore = false
+
+    getVehicles()
+      .then((data) => {
+        if (!ignore && Array.isArray(data) && data.length) {
+          setVehicleList(data.map(mapVehicle))
+        }
+      })
+      .catch(() => {})
+
+    return () => {
+      ignore = true
+    }
+  }, [])
 
   const filteredVehicles = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -73,3 +90,4 @@ function Vehicles() {
 }
 
 export default Vehicles
+

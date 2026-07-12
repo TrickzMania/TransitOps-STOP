@@ -1,6 +1,27 @@
-import { reports } from '../data/mockData'
+﻿import { useEffect, useState } from 'react'
+import { getReports } from '../services/api'
 
 function Reports() {
+  const [summary, setSummary] = useState({ fuelCost: 0, maintenanceCost: 0, totalTrips: 0 })
+
+  useEffect(() => {
+    let ignore = false
+
+    getReports()
+      .then((data) => {
+        if (!ignore && data) {
+          setSummary(data)
+        }
+      })
+      .catch(() => {})
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  const totalCost = Number(summary.fuelCost || 0) + Number(summary.maintenanceCost || 0)
+
   return (
     <div className="page-grid">
       <section className="panel">
@@ -11,24 +32,24 @@ function Reports() {
         <div className="reports-layout">
           <div className="reports-grid">
             <div className="info-card">
-              <h4>FUEL EFFICIENCY</h4>
-              <h3>8.3 MPG</h3>
-              <p className="muted">Improved by 0.4 mpg this month</p>
+              <h4>TOTAL TRIPS</h4>
+              <h3>{summary.totalTrips || 0}</h3>
+              <p className="muted">Trips currently tracked</p>
             </div>
             <div className="info-card">
-              <h4>FLEET UTILIZATION</h4>
-              <h3>81%</h3>
-              <p className="muted">Above current target</p>
+              <h4>FUEL COST</h4>
+              <h3>Rs {Number(summary.fuelCost || 0).toLocaleString()}</h3>
+              <p className="muted">Fuel spend from backend logs</p>
             </div>
             <div className="info-card">
               <h4>OPERATIONAL COST</h4>
-              <h3>Rs 24.6K</h3>
+              <h3>Rs {totalCost.toLocaleString()}</h3>
               <p className="muted">Fuel + maintenance</p>
             </div>
             <div className="info-card">
-              <h4>VEHICLE ROI</h4>
-              <h3>14.8%</h3>
-              <p className="muted">Revenue minus fuel and maintenance</p>
+              <h4>MAINTENANCE COST</h4>
+              <h3>Rs {Number(summary.maintenanceCost || 0).toLocaleString()}</h3>
+              <p className="muted">Service cost from backend records</p>
             </div>
           </div>
           <div className="panel soft-panel">

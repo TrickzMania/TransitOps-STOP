@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { NavLink, Route, Routes, useLocation } from 'react-router-dom'
+import { NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import './App.css'
+import { useAuth } from './context/AuthContext'
 import Dashboard from './pages/Dashboard'
 import Drivers from './pages/Drivers'
 import FuelExpenses from './pages/FuelExpenses'
@@ -22,82 +23,116 @@ const navItems = [
   { to: '/settings', label: 'Settings' },
 ]
 
-function App() {
+function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const location = useLocation()
-  const showShell = location.pathname !== '/'
+
+  const handleLogout = () => {
+    logout()
+    navigate('/')
+  }
+
+  return (
+    <>
+      <aside className={`sidebar ${sidebarOpen ? 'open' : 'collapsed'}`}>
+        <div className="sidebar-brand">
+          <div className="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" className="brand-icon">
+              <path d="M4 14h8l2-3h4l2 3v2H4z" />
+              <path d="M8 11V8h3" />
+              <path d="M14 11h3" />
+              <circle cx="8" cy="16" r="2" />
+              <circle cx="16" cy="16" r="2" />
+            </svg>
+          </div>
+          <div className="brand-copy">
+            <h3>TransitOps</h3>
+            <p>Command center</p>
+          </div>
+        </div>
+        <button className="sidebar-toggle" onClick={() => setSidebarOpen((v) => !v)}>
+          {sidebarOpen ? '⟨' : '⟩'}
+        </button>
+        <nav className="nav-links">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              title={item.label}
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+            >
+              <span className="nav-link-badge" aria-hidden="true">
+                {item.label.charAt(0).toUpperCase()}
+              </span>
+              {sidebarOpen && <span className="nav-link-text">{item.label}</span>}
+            </NavLink>
+          ))}
+        </nav>
+        {sidebarOpen && user && (
+          <div className="sidebar-footer">
+            <span className="muted">{user.full_name || user.email}</span>
+            <button className="btn btn-secondary sidebar-logout" onClick={handleLogout}>
+              Logout
+            </button>
+          </div>
+        )}
+      </aside>
+
+      <main className="main-content">
+        {location.pathname === '/dashboard' && (
+          <header className="topbar">
+            <div>
+              <p className="eyebrow">Operations</p>
+              <h2>TransitOps dashboard</h2>
+            </div>
+            <div className="topbar-actions">
+              <button className="btn btn-secondary">Alerts</button>
+              <button className="btn btn-primary">+ New task</button>
+            </div>
+          </header>
+        )}
+
+        <Routes>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/vehicles" element={<Vehicles />} />
+          <Route path="/drivers" element={<Drivers />} />
+          <Route path="/trips" element={<Trips />} />
+          <Route path="/maintenance" element={<Maintenance />} />
+          <Route path="/fuel-expenses" element={<FuelExpenses />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </main>
+    </>
+  )
+}
+
+function App() {
+  const { isLoggedIn } = useAuth()
+  const location = useLocation()
+  const isLoginRoute = location.pathname === '/'
+
+  // If not logged in and not on login, redirect to login
+  if (!isLoggedIn && !isLoginRoute) {
+    return <Navigate to="/" replace />
+  }
+
+  // If logged in and on login page, redirect to dashboard
+  if (isLoggedIn && isLoginRoute) {
+    return <Navigate to="/dashboard" replace />
+  }
 
   return (
     <div className="app-shell">
-      {showShell ? (
-        <>
-          <aside className={`sidebar ${sidebarOpen ? 'open' : 'collapsed'}`}>
-            <div className="sidebar-brand">
-              <div className="brand-mark" aria-hidden="true">
-                <svg viewBox="0 0 24 24" className="brand-icon">
-                  <path d="M4 14h8l2-3h4l2 3v2H4z" />
-                  <path d="M8 11V8h3" />
-                  <path d="M14 11h3" />
-                  <circle cx="8" cy="16" r="2" />
-                  <circle cx="16" cy="16" r="2" />
-                </svg>
-              </div>
-              <div className="brand-copy">
-                <h3>TransitOps</h3>
-                <p>Command center</p>
-              </div>
-            </div>
-            <button className="sidebar-toggle" onClick={() => setSidebarOpen((value) => !value)}>
-              {sidebarOpen ? '⟨' : '⟩'}
-            </button>
-            <nav className="nav-links">
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  title={item.label}
-                  className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                >
-                  <span className="nav-link-badge" aria-hidden="true">
-                    {item.label.charAt(0).toUpperCase()}
-                  </span>
-                  {sidebarOpen && <span className="nav-link-text">{item.label}</span>}
-                </NavLink>
-              ))}
-            </nav>
-          </aside>
-
-          <main className="main-content">
-            {location.pathname === '/dashboard' && (
-              <header className="topbar">
-                <div>
-                  <p className="eyebrow">Operations</p>
-                  <h2>TransitOps dashboard</h2>
-                </div>
-                <div className="topbar-actions">
-                  <button className="btn btn-secondary">Alerts</button>
-                  <button className="btn btn-primary">+ New task</button>
-                </div>
-              </header>
-            )}
-
-            <Routes>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/vehicles" element={<Vehicles />} />
-              <Route path="/drivers" element={<Drivers />} />
-              <Route path="/trips" element={<Trips />} />
-              <Route path="/maintenance" element={<Maintenance />} />
-              <Route path="/fuel-expenses" element={<FuelExpenses />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="*" element={<Dashboard />} />
-            </Routes>
-          </main>
-        </>
+      {isLoggedIn ? (
+        <AppShell />
       ) : (
         <Routes>
           <Route path="/" element={<Login />} />
-          <Route path="*" element={<Login />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       )}
     </div>

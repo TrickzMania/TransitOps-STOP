@@ -1,6 +1,35 @@
+﻿import { useEffect, useMemo, useState } from 'react'
 import { expenses } from '../data/mockData'
+import { getExpenses, getFuelLogs, mapExpense, mapFuelLog } from '../services/api'
 
 function FuelExpenses() {
+  const [fuelLogs, setFuelLogs] = useState(expenses.slice(0, 2).map((expense) => ({ ...expense, liters: '48 L' })))
+  const [expenseList, setExpenseList] = useState(expenses)
+
+  useEffect(() => {
+    let ignore = false
+
+    Promise.allSettled([getFuelLogs(), getExpenses()]).then(([fuelResult, expensesResult]) => {
+      if (ignore) return
+
+      if (fuelResult.status === 'fulfilled' && Array.isArray(fuelResult.value) && fuelResult.value.length) {
+        setFuelLogs(fuelResult.value.map(mapFuelLog))
+      }
+      if (expensesResult.status === 'fulfilled' && Array.isArray(expensesResult.value) && expensesResult.value.length) {
+        setExpenseList(expensesResult.value.map(mapExpense))
+      }
+    })
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  const totalCost = useMemo(() => {
+    const parseAmount = (value) => Number(String(value).replace(/[^0-9.-]+/g, '')) || 0
+    return [...fuelLogs, ...expenseList].reduce((sum, item) => sum + parseAmount(item.amount), 0)
+  }, [expenseList, fuelLogs])
+
   return (
     <div className="page-grid">
       <section className="panel">
@@ -24,11 +53,11 @@ function FuelExpenses() {
                 <div>Litres</div>
                 <div>Fuel cost</div>
               </div>
-              {expenses.slice(0, 2).map((expense) => (
+              {fuelLogs.map((expense) => (
                 <div key={expense.id} className="table-row">
                   <div>{expense.vehicle}</div>
                   <div>{expense.date}</div>
-                  <div>48 L</div>
+                  <div>{expense.liters || '48 L'}</div>
                   <div>{expense.amount}</div>
                 </div>
               ))}
@@ -46,28 +75,18 @@ function FuelExpenses() {
                 <div>Type</div>
                 <div>Total</div>
               </div>
-              <div className="table-row">
-                <div>TR-1042</div>
-                <div>V-101</div>
-                <div>Toll</div>
-                <div>₹320</div>
-              </div>
-              <div className="table-row">
-                <div>TR-1043</div>
-                <div>V-102</div>
-                <div>Misc.</div>
-                <div>₹180</div>
-              </div>
-              <div className="table-row">
-                <div>TR-1044</div>
-                <div>V-103</div>
-                <div>Maint.</div>
-                <div>₹450</div>
-              </div>
+              {expenseList.map((expense) => (
+                <div key={expense.id} className="table-row">
+                  <div>{expense.id}</div>
+                  <div>{expense.vehicle}</div>
+                  <div>{expense.category}</div>
+                  <div>{expense.amount}</div>
+                </div>
+              ))}
             </div>
             <div className="summary-card" style={{ marginTop: '10px' }}>
               <h4>TOTAL OPERATIONAL COST</h4>
-              <p className="muted">Fuel + maintenance = ₹24,600</p>
+              <p className="muted">Fuel + expenses = Rs {totalCost.toLocaleString()}</p>
             </div>
           </div>
         </div>

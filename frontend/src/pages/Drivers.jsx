@@ -1,9 +1,26 @@
-import { useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { drivers as initialDrivers } from '../data/mockData'
+import { getDrivers, mapDriver } from '../services/api'
 
 function Drivers() {
   const [driverList, setDriverList] = useState(initialDrivers)
   const [search, setSearch] = useState('')
+
+  useEffect(() => {
+    let ignore = false
+
+    getDrivers()
+      .then((data) => {
+        if (!ignore && Array.isArray(data) && data.length) {
+          setDriverList(data.map(mapDriver))
+        }
+      })
+      .catch(() => {})
+
+    return () => {
+      ignore = true
+    }
+  }, [])
 
   const filteredDrivers = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -68,3 +85,4 @@ function Drivers() {
 }
 
 export default Drivers
+
