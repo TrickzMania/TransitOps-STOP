@@ -6,7 +6,7 @@
   "scripts": {
     "build": "npm install --prefix frontend && npm run build --prefix frontend",
     "start": "npm --prefix backend start",
-    "render-build": "npm install --prefix frontend && npm run build --prefix frontend && npm install --prefix backend",
+    "render-build": "npm install --include=dev --prefix frontend && npm run build --prefix frontend && npm install --prefix backend",
     "dev:backend": "npm --prefix backend run dev",
     "dev:frontend": "npm --prefix frontend run dev"
   }
